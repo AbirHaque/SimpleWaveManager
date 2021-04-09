@@ -18,7 +18,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with SimpleWaveManager in the file labeled <LICENSE.txt>.  If not, see <https://www.gnu.org/licenses/>.
 */
- 
+
 import java.io.*;
 import java.util.*;
 /**
@@ -37,13 +37,191 @@ public class SimpleWaveManager
      */
     public static final int HEADER_LENGTH = 44;
     /**
-     * Default sample rate of 44100 hertz.
+     * Default sample rate of 44100.
      */
     public static final int DEFAULT_SAMPLE_RATE = 44100;
     /**
      * Default bits per sample of 16 bits.
      */
     public static final int DEFAULT_BITS_PER_SAMPLE = 16;
+    /**
+     * Converts double mono audio values into byte values. Header is generated.
+     * 
+     * @param values    Values to read.
+     * 
+     * @return  Byte array.
+     */
+    public static byte[] getMonoBytes(Double[] values) throws Exception
+    {
+        byte[] bytes = getMonoBytes(values, DEFAULT_SAMPLE_RATE, DEFAULT_BITS_PER_SAMPLE);
+        return bytes;
+    }
+    /**
+     * Converts double mono audio values into byte values with custom sample rate and bits per sample. Header is generated.
+     * 
+     * @param values    Double values to convert, then write.
+     * @param sampleRate    Sample rate.
+     * @param bitsPerSample    Bits per sample. Can only output 8-bit or 16-bit audio.
+     * 
+     * @return Byte array.
+     */
+    public static byte[] getMonoBytes(Double[] values, int sampleRate, int bitsPerSample) throws Exception
+    {
+        int byteLength = (values.length * bitsPerSample/8)+HEADER_LENGTH;
+        byte[] bytes = new byte[byteLength];
+        bytes[0] = 'R';
+        bytes[1] = 'I';
+        bytes[2] = 'F';
+        bytes[3] = 'F';
+        bytes[4] = (byte) ((36 + values.length) & 0xFF);
+        bytes[5] = (byte) (((36 + values.length) >> 8) & 0xFFFF);
+        bytes[6] = (byte) (((36 + values.length) >> 16) & 0xFFFFFF);
+        bytes[7] = (byte) (((36 + values.length) >> 24) & 0xFFFFFFFF);
+        bytes[8] = 'W';
+        bytes[9] = 'A';
+        bytes[10] = 'V';
+        bytes[11] = 'E';
+        bytes[12] = 'f';
+        bytes[13] = 'm';
+        bytes[14] = 't';
+        bytes[15] = ' ';
+        bytes[16] = 16;
+        bytes[17] = 0;
+        bytes[18] = 0;
+        bytes[19] = 0;
+        bytes[20] = 1;
+        bytes[21] = 0;
+        bytes[22] = (byte) 1;
+        bytes[23] = 0;
+        bytes[24] = (byte) (sampleRate & 0xFF);
+        bytes[25] = (byte) ((sampleRate >> 8) & 0xFFFF);
+        bytes[26] = (byte) ((sampleRate >> 16) & 0xFFFFFF);
+        bytes[27] = (byte) ((sampleRate >> 24) & 0xFFFFFFFF);
+        bytes[28] = (byte) ((sampleRate*bitsPerSample/8) & 0xFF);
+        bytes[29] = (byte) (((sampleRate*bitsPerSample/8) >> 8) & 0xFFFF);
+        bytes[30] = (byte) (((sampleRate*bitsPerSample/8) >> 16) & 0xFFFFFF);
+        bytes[31] = (byte) (((sampleRate*bitsPerSample/8) >> 24) & 0xFFFFFFFF);
+        bytes[32] = (byte) (bitsPerSample/8);
+        bytes[33] = 0;
+        bytes[34] = (byte) bitsPerSample;
+        bytes[35] = 0;
+        bytes[36] = 'd';
+        bytes[37] = 'a';
+        bytes[38] = 't';
+        bytes[39] = 'a';
+        bytes[40] = (byte) ((values.length * bitsPerSample/8)  & 0xFF);
+        bytes[41] = (byte) (((values.length * bitsPerSample/8) >> 8) & 0xFFFF);
+        bytes[42] = (byte) (((values.length * bitsPerSample/8) >> 16) & 0xFFFFFF);
+        bytes[43] = (byte) (((values.length * bitsPerSample/8) >> 24) & 0xFFFFFFFF);
+        int byteIndex = HEADER_LENGTH;
+        for(int i = 0; i < values.length; i++)
+        {
+            if(bitsPerSample==16)
+            {
+                bytes[byteIndex] =(byte)(values[i]*Math.pow(2,bitsPerSample/2-1));
+                bytes[byteIndex+1] =(byte)(values[i]*Math.pow(2,bitsPerSample/2-1));
+                byteIndex+=2;
+            }
+            if(bitsPerSample==8)
+            {
+                bytes[byteIndex] = (byte)((values[i]*Math.pow(2,bitsPerSample/2-1))/2);//Dividing it by value by two only for 8 bit, because audio is unbearably loud without it.
+                byteIndex+=1;
+            }
+        }
+        return bytes;
+    }
+    /**
+     * Converts double stereo audio values into byte values. Header is generated.
+     * 
+     * @param channel1Values    Double values to convert, then write into left channel.
+     * @param channel2Values    Double values to convert, then write into right channel.
+     * @param fileName    Name of output file.
+     * 
+     * @return Byte array.
+     */
+    public static byte[] getStereoBytes(Double[] channel1Values, Double[] channel2Values) throws Exception
+    {
+        byte[] bytes = getStereoBytes(channel1Values, channel2Values, DEFAULT_SAMPLE_RATE, DEFAULT_BITS_PER_SAMPLE);
+        return bytes;
+    }
+    /**
+     * Converts double stereo audio values into byte values with custom sample rate and bits per sample.
+     * 
+     * @param channel1Values    Double values to convert, then write into left channel.
+     * @param channel2Values    Double values to convert, then write into right channel.
+     * @param sampleRate    Sample rate.
+     * @param bitsPerSample    Bits per sample. Can only output 8-bit or 16-bit audio.
+     * 
+     * @return Byte array.
+     */
+    public static byte[] getStereoBytes(Double[] channel1Values, Double[] channel2Values, int sampleRate, int bitsPerSample) throws Exception
+    {
+        int byteLength = (channel1Values.length*2*bitsPerSample/8)+HEADER_LENGTH;
+        byte[] bytes = new byte[byteLength];
+        bytes[0] = 'R';
+        bytes[1] = 'I';
+        bytes[2] = 'F';
+        bytes[3] = 'F';
+        bytes[4] = (byte) ((36 + (channel1Values.length * 2 * bitsPerSample/8)) & 0xFF);
+        bytes[5] = (byte) (((36 + (channel1Values.length * 2 * bitsPerSample/8)) >> 8) & 0xFFFF);
+        bytes[6] = (byte) (((36 + (channel1Values.length * 2 * bitsPerSample/8)) >> 16) & 0xFFFFFF);
+        bytes[7] = (byte) (((36 + (channel1Values.length * 2 * bitsPerSample/8)) >> 24) & 0xFFFFFFFF);
+        bytes[8] = 'W';
+        bytes[9] = 'A';
+        bytes[10] = 'V';
+        bytes[11] = 'E';
+        bytes[12] = 'f';
+        bytes[13] = 'm';
+        bytes[14] = 't';
+        bytes[15] = ' ';
+        bytes[16] = 16;
+        bytes[17] = 0;
+        bytes[18] = 0;
+        bytes[19] = 0;
+        bytes[20] = 1;
+        bytes[21] = 0;
+        bytes[22] = (byte) 2;
+        bytes[23] = 0;
+        bytes[24] = (byte) (sampleRate & 0xFF);
+        bytes[25] = (byte) ((sampleRate >> 8) & 0xFFFF);
+        bytes[26] = (byte) ((sampleRate >> 16) & 0xFFFFFF);
+        bytes[27] = (byte) ((sampleRate >> 24) & 0xFFFFFF);
+        bytes[28] = (byte) ((sampleRate*2*bitsPerSample/8) & 0xFF);
+        bytes[29] = (byte) (((sampleRate*2*bitsPerSample/8) >> 8) & 0xFFFF);
+        bytes[30] = (byte) (((sampleRate*2*bitsPerSample/8) >> 16) & 0xFFFFFF);
+        bytes[31] = (byte) (((sampleRate*2*bitsPerSample/8) >> 24) & 0xFFFFFFFF);
+        bytes[32] = (byte) (2 * bitsPerSample/8);
+        bytes[33] = 0;
+        bytes[34] = (byte) bitsPerSample;
+        bytes[35] = 0;
+        bytes[36] = 'd';
+        bytes[37] = 'a';
+        bytes[38] = 't';
+        bytes[39] = 'a';
+        bytes[40] = (byte) (channel1Values.length * 2 * bitsPerSample/8 & 0xFF);
+        bytes[41] = (byte) ((channel1Values.length * 2 * bitsPerSample/8 >> 8) & 0xFFFF);
+        bytes[42] = (byte) ((channel1Values.length * 2 * bitsPerSample/8 >> 16) & 0xFFFFFF);
+        bytes[43] = (byte) ((channel1Values.length * 2 * bitsPerSample/8 >> 24) & 0xFFFFFFFF);
+        int byteIndex = HEADER_LENGTH;
+        for(int i = 0; i < channel1Values.length; i++)
+        {
+            if(bitsPerSample==16)
+            {
+                bytes[byteIndex] = (byte)(channel1Values[i]*Math.pow(2,bitsPerSample/2-1));
+                bytes[byteIndex+1] =(byte)(channel1Values[i]*Math.pow(2,bitsPerSample/2-1));
+                bytes[byteIndex+2] =(byte)(channel2Values[i]*Math.pow(2,bitsPerSample/2-1));
+                bytes[byteIndex+3] =(byte)(channel2Values[i]*Math.pow(2,bitsPerSample/2-1));
+                byteIndex+=4;
+            }
+            if(bitsPerSample==8)
+            {
+                bytes[byteIndex] = (byte)((channel1Values[i]*Math.pow(2,bitsPerSample/2-1))/2);//Dividing it by value by two only for 8 bit, because audio is unbearably loud without it.
+                bytes[byteIndex+1] =(byte)((channel2Values[i]*Math.pow(2,bitsPerSample/2-1))/2);//Dividing it by value by two only for 8 bit, because audio is unbearably loud without it.
+                byteIndex+=2;
+            }
+        }
+        return bytes;
+    }
     /**
      * Reads bytes within audio file. Header is included.
      * 
@@ -287,7 +465,7 @@ public class SimpleWaveManager
         out.close();
     }
     /**
-     * Writes bytes into mono audio file with default sample rate of 44100 hertz and bits per sample of 16 bits.
+     * Writes bytes into mono audio file with default sample rate of 44100 and bits per sample of 16 bits.
      * 
      * @param values    Double values to convert, then write.
      * @param fileName    Name of output file.
@@ -306,68 +484,7 @@ public class SimpleWaveManager
      */
     public static void write(Double[] values, int sampleRate, int bitsPerSample, String fileName) throws Exception
     {
-        int byteLength = (values.length * bitsPerSample/8)+HEADER_LENGTH;
-        byte[] bytes = new byte[byteLength];
-        bytes[0] = 'R';
-        bytes[1] = 'I';
-        bytes[2] = 'F';
-        bytes[3] = 'F';
-        bytes[4] = (byte) ((36 + values.length) & 0xFF);
-        bytes[5] = (byte) (((36 + values.length) >> 8) & 0xFFFF);
-        bytes[6] = (byte) (((36 + values.length) >> 16) & 0xFFFFFF);
-        bytes[7] = (byte) (((36 + values.length) >> 24) & 0xFFFFFFFF);
-        bytes[8] = 'W';
-        bytes[9] = 'A';
-        bytes[10] = 'V';
-        bytes[11] = 'E';
-        bytes[12] = 'f';
-        bytes[13] = 'm';
-        bytes[14] = 't';
-        bytes[15] = ' ';
-        bytes[16] = 16;
-        bytes[17] = 0;
-        bytes[18] = 0;
-        bytes[19] = 0;
-        bytes[20] = 1;
-        bytes[21] = 0;
-        bytes[22] = (byte) 1;
-        bytes[23] = 0;
-        bytes[24] = (byte) (sampleRate & 0xFF);
-        bytes[25] = (byte) ((sampleRate >> 8) & 0xFFFF);
-        bytes[26] = (byte) ((sampleRate >> 16) & 0xFFFFFF);
-        bytes[27] = (byte) ((sampleRate >> 24) & 0xFFFFFFFF);
-        bytes[28] = (byte) ((sampleRate*bitsPerSample/8) & 0xFF);
-        bytes[29] = (byte) (((sampleRate*bitsPerSample/8) >> 8) & 0xFFFF);
-        bytes[30] = (byte) (((sampleRate*bitsPerSample/8) >> 16) & 0xFFFFFF);
-        bytes[31] = (byte) (((sampleRate*bitsPerSample/8) >> 24) & 0xFFFFFFFF);
-        bytes[32] = (byte) (bitsPerSample/8);
-        bytes[33] = 0;
-        bytes[34] = (byte) bitsPerSample;
-        bytes[35] = 0;
-        bytes[36] = 'd';
-        bytes[37] = 'a';
-        bytes[38] = 't';
-        bytes[39] = 'a';
-        bytes[40] = (byte) ((values.length * bitsPerSample/8)  & 0xFF);
-        bytes[41] = (byte) (((values.length * bitsPerSample/8) >> 8) & 0xFFFF);
-        bytes[42] = (byte) (((values.length * bitsPerSample/8) >> 16) & 0xFFFFFF);
-        bytes[43] = (byte) (((values.length * bitsPerSample/8) >> 24) & 0xFFFFFFFF);
-        int byteIndex = HEADER_LENGTH;
-        for(int i = 0; i < values.length; i++)
-        {
-            if(bitsPerSample==16)
-            {
-                bytes[byteIndex] =(byte)(values[i]*Math.pow(2,bitsPerSample/2-1));
-                bytes[byteIndex+1] =(byte)(values[i]*Math.pow(2,bitsPerSample/2-1));
-                byteIndex+=2;
-            }
-            if(bitsPerSample==8)
-            {
-                bytes[byteIndex] = (byte)(values[i]*Math.pow(2,bitsPerSample/2-1));
-                byteIndex+=1;
-            }
-        }
-        write(bytes, fileName);
+        write(getMonoBytes(values, sampleRate, bitsPerSample), fileName);
     }
     /**
      * Writes bytes into stereo audio file with default sample rate of 44100 hertz and bits per sample of 16 bits.
@@ -391,75 +508,43 @@ public class SimpleWaveManager
      */
     public static void write(Double[] channel1Values, Double[] channel2Values, int sampleRate, int bitsPerSample, String fileName) throws Exception
     {
-        int byteLength = (channel1Values.length*2*bitsPerSample/8)+HEADER_LENGTH;
-        byte[] bytes = new byte[byteLength];
-        bytes[0] = 'R';
-        bytes[1] = 'I';
-        bytes[2] = 'F';
-        bytes[3] = 'F';
-        bytes[4] = (byte) ((36 + (channel1Values.length * 2 * bitsPerSample/8)) & 0xFF);
-        bytes[5] = (byte) (((36 + (channel1Values.length * 2 * bitsPerSample/8)) >> 8) & 0xFFFF);
-        bytes[6] = (byte) (((36 + (channel1Values.length * 2 * bitsPerSample/8)) >> 16) & 0xFFFFFF);
-        bytes[7] = (byte) (((36 + (channel1Values.length * 2 * bitsPerSample/8)) >> 24) & 0xFFFFFFFF);
-        bytes[8] = 'W';
-        bytes[9] = 'A';
-        bytes[10] = 'V';
-        bytes[11] = 'E';
-        bytes[12] = 'f';
-        bytes[13] = 'm';
-        bytes[14] = 't';
-        bytes[15] = ' ';
-        bytes[16] = 16;
-        bytes[17] = 0;
-        bytes[18] = 0;
-        bytes[19] = 0;
-        bytes[20] = 1;
-        bytes[21] = 0;
-        bytes[22] = (byte) 2;
-        bytes[23] = 0;
-        bytes[24] = (byte) (sampleRate & 0xFF);
-        bytes[25] = (byte) ((sampleRate >> 8) & 0xFFFF);
-        bytes[26] = (byte) ((sampleRate >> 16) & 0xFFFFFF);
-        bytes[27] = (byte) ((sampleRate >> 24) & 0xFFFFFF);
-        bytes[28] = (byte) ((sampleRate*2*bitsPerSample/8) & 0xFF);
-        bytes[29] = (byte) (((sampleRate*2*bitsPerSample/8) >> 8) & 0xFFFF);
-        bytes[30] = (byte) (((sampleRate*2*bitsPerSample/8) >> 16) & 0xFFFFFF);
-        bytes[31] = (byte) (((sampleRate*2*bitsPerSample/8) >> 24) & 0xFFFFFFFF);
-        bytes[32] = (byte) (2 * bitsPerSample/8);
-        bytes[33] = 0;
-        bytes[34] = (byte) bitsPerSample;
-        bytes[35] = 0;
-        bytes[36] = 'd';
-        bytes[37] = 'a';
-        bytes[38] = 't';
-        bytes[39] = 'a';
-        bytes[40] = (byte) (channel1Values.length * 2 * bitsPerSample/8 & 0xFF);
-        bytes[41] = (byte) ((channel1Values.length * 2 * bitsPerSample/8 >> 8) & 0xFFFF);
-        bytes[42] = (byte) ((channel1Values.length * 2 * bitsPerSample/8 >> 16) & 0xFFFFFF);
-        bytes[43] = (byte) ((channel1Values.length * 2 * bitsPerSample/8 >> 24) & 0xFFFFFFFF);
-        int byteIndex = HEADER_LENGTH;
-        for(int i = 0; i < channel1Values.length; i++)
-        {
-            if(bitsPerSample==16)
-            {
-                bytes[byteIndex] = (byte)(channel1Values[i]*Math.pow(2,bitsPerSample/2-1));
-                bytes[byteIndex+1] =(byte)(channel1Values[i]*Math.pow(2,bitsPerSample/2-1));
-                bytes[byteIndex+2] =(byte)(channel2Values[i]*Math.pow(2,bitsPerSample/2-1));
-                bytes[byteIndex+3] =(byte)(channel2Values[i]*Math.pow(2,bitsPerSample/2-1));
-                byteIndex+=4;
-            }
-            if(bitsPerSample==8)
-            {
-                bytes[byteIndex] = (byte)(channel1Values[i]*Math.pow(2,bitsPerSample/2-1));
-                bytes[byteIndex+1] =(byte)(channel2Values[i]*Math.pow(2,bitsPerSample/2-1));
-                byteIndex+=2;
-            }
-        }
-        write(bytes, fileName);
+        write(getStereoBytes(channel1Values, channel2Values, sampleRate, bitsPerSample), fileName);
     }
     /**
-     * Unit test writing and printing mono audio file values, and writing two identical mono audio files using different write methods and two identical stereo audio files using different write methods.
+     * Merge bytes into audio file, regardless if it is mono or stereo.
+     * 
+     * @param set1    Byte audio values to merge.
+     * @param set2    Byte audio values to merge according to the length of set1.
+     * 
+     * @return Byte array of merged audio bytes.
      */
+    public static byte[] merge(byte[] set1, byte[] set2)
+    {
+        byte[] bytes = new byte[set1.length];
+        if(set1.length<=set2.length)
+        {
+            for (int i = 0; i < bytes.length; i++)
+            {
+                bytes[i] = (byte)((set1[i] + set2[i])>>1);
+            }
+            return bytes;
+        }
+        else
+        {
+            for (int i = 0; i < set2.length; i++)
+            {
+                bytes[i] = (byte)((set1[i] + set2[i])>>1);
+            }
+            for (int i = set2.length; i < set1.length; i++)
+            {
+                bytes[i] = set1[i];
+            }
+            return bytes;
+        }
+    }
+    /**
+     * Unit test.
+    */
     public static void main() throws Exception
     {
         Double[] values1 = new Double[44100];
@@ -472,17 +557,20 @@ public class SimpleWaveManager
         {
             values2[i] = 0.5 * Math.sin(2*Math.PI * 500 * i / 44100);
         }
-        write(values1, "1.wav");
-        write(values2, 44100, 16, "2.wav");
-        write(values1, values2,"3.wav");
-        write(values1, values2, 44100, 16, "4.wav");
+        write(values1, "440HZ-16BIT.wav");
+        write(values1, 44100, 8, "440HZ-8BIT.wav");
+        write(values2, "500HZ-16BIT.wav");
+        write(values2, 44100, 8, "500HZ-8BIT.wav");
+        write(values1, values2,"LEFT_440HZ-RIGHT_500HZ-16BIT.wav");
+        write(values1, values2, 44100, 8, "LEFT_440HZ-RIGHT_500HZ-8BIT.wav");
+        write(merge(getMonoBytes(values1), getMonoBytes(values2)),"MERGED_440HZ_500HZ-16BIT.wav");
         Double[] values3 = new Double[4];
         for(int i = 0; i < values3.length; i++)
         {
             values3[i] = 0.5 * Math.sin(2*Math.PI * 440 * i / 44100);
         }
-        write(values3, "3.wav");
-        Double[] readValues = getMonoValues(new File("3.wav"));
+        write(values3, "SMALLFILE.wav");
+        Double[] readValues = getMonoValues(new File("SMALLFILE.wav"));
         for (int i =0; i < readValues.length;i++)
         {
             System.out.println("i = " + i + " >>" + readValues[i]);
