@@ -1,24 +1,19 @@
 /*
 SimpleWaveManager is a library for reading and writing WAVE audio files.
-
 Copyright 2021 Abir Haque
-
 This file is part of SimpleWaveManager.
-
 SimpleWaveManager is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
-
 SimpleWaveManager is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Lesser General Public License for more details.
-
 You should have received a copy of the GNU Lesser General Public License
 along with SimpleWaveManager in the file labeled <LICENSE.txt>.  If not, see <https://www.gnu.org/licenses/>.
 */
-
+ 
 import java.io.*;
 import java.util.*;
 /**
@@ -521,9 +516,13 @@ public class SimpleWaveManager
     public static byte[] merge(byte[] set1, byte[] set2)
     {
         byte[] bytes = new byte[set1.length];
+        for (int i = 0; i < 44; i++)
+        {
+            bytes[i] = set1[i];
+        }
         if(set1.length<=set2.length)
         {
-            for (int i = 0; i < bytes.length; i++)
+            for (int i = 44; i < bytes.length; i++)
             {
                 bytes[i] = (byte)((set1[i] + set2[i])>>1);
             }
@@ -531,7 +530,7 @@ public class SimpleWaveManager
         }
         else
         {
-            for (int i = 0; i < set2.length; i++)
+            for (int i = 44; i < set2.length; i++)
             {
                 bytes[i] = (byte)((set1[i] + set2[i])>>1);
             }
@@ -541,6 +540,77 @@ public class SimpleWaveManager
             }
             return bytes;
         }
+    }
+    /**
+     * Merge bytes into audio file, regardless if it is mono or stereo.
+     * 
+     * @param set1    Byte audio values to merge according to the length of longest array.
+     * @param set2    Byte audio values to merge according to the length of longest array.
+     * 
+     * @return Byte array of merged audio bytes.
+     */
+    public static byte[] mergeToLongest(byte[] set1, byte[] set2)
+    {
+        int longestLength = set1.length;
+        if(set1.length<=set2.length)
+        {
+            longestLength = set2.length;
+        }
+        byte[] bytes = new byte[longestLength];
+        for (int i = 0; i < 44; i++)
+        {
+            bytes[i] = set1[i];
+        }
+        if(set1.length<=set2.length)
+        {
+            for (int i = 44; i < set1.length; i++)
+            {
+                bytes[i] = (byte)((set1[i] + set2[i])>>1);
+            }
+            for (int i = set1.length; i < bytes.length; i++)
+            {
+                bytes[i] = set2[i];
+            }
+            return bytes;
+        }
+        else
+        {
+            for (int i = 44; i < set2.length; i++)
+            {
+                bytes[i] = (byte)((set1[i] + set2[i])>>1);
+            }
+            for (int i = set2.length; i < bytes.length; i++)
+            {
+                bytes[i] = set1[i];
+            }
+            return bytes;
+        }
+    }
+    /**
+     * Merge bytes into audio file, regardless if it is mono or stereo.
+     * 
+     * @param set1    Byte audio values to merge according to the length of shortest array.
+     * @param set2    Byte audio values to merge according to the length of shortest array.
+     * 
+     * @return Byte array of merged audio bytes.
+     */
+    public static byte[] mergeToShortest(byte[] set1, byte[] set2)
+    {
+        int shortestLength = set2.length;
+        if(set1.length<=set2.length)
+        {
+            shortestLength = set1.length;
+        }
+        byte[] bytes = new byte[shortestLength];
+        for (int i = 0; i < 44; i++)
+        {
+            bytes[i] = set1[i];
+        }
+        for (int i = 44; i < bytes.length; i++)
+        {
+            bytes[i] = (byte)((set1[i] + set2[i])>>1);
+        }
+        return bytes;
     }
     /**
      * Unit test.
